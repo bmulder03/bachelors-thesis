@@ -1,0 +1,2 @@
+n_asset_year_rows,mean_delta_mse,median_delta_mse,frac_assets_joint_better,mean_delta_std_pred,median_delta_std_pred,frac_std_pred_reduced,corr_delta_stdpred_delta_mse_all,mean_mse_sep,mean_std_pred_sep
+1873,-3.2394198075872922e-06,-6.898045825607795e-07,0.5920982381206621,-0.0008994514650184329,-0.0007128930776968041,0.99893219434063,0.2649947878181683,0.000536659966825234,0.0009173590947320742

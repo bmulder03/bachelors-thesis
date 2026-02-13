@@ -125,7 +125,7 @@ Pre-computed results are included in the `results/` directory:
 │   ├── 2_general_data_val.py
 │   └── 3_dataset_verification_F1.py
 ├── F1_eval
-│   ├── 6_determine_usable_pairs_F1.py
+│   ├── 6.1_determine_usable_pairs_F1.py
 │   ├── expanding_window_evaluation_setup.py
 │   ├── joint_model_eval_F1.py
 │   └── separate_model_eval_F1.py
@@ -169,10 +169,3 @@ Pre-computed results are included in the `results/` directory:
 </pre>
 </details>
 
-## License
-
-This code is provided for academic reference. Please contact the author before reuse.
-
-## Contact
-
-Ben Mulder — ben.mulder@student.unisg.ch

@@ -26,6 +26,72 @@ regimes of increasing dimensionality.
 All models are benchmarked against naïve baselines including the zero predictor,
 historical means, and a James–Stein shrinkage estimator.
 
+## Repository Structure
+
+<details>
+<summary>Click to expand</summary>
+<pre>
+.
+├── README.md
+├── requirements.txt
+├── corr_SPI_study.py
+├── robustness_checks.py
+├── data_preparation
+│   ├── 1.1_create_events.py
+│   ├── 1.2_create_current.py
+│   ├── 2_spi_historical_reconstruction.py
+│   ├── 3_SPI_RICs_to_pull.py
+│   ├── 4_combine_initial_pull.py
+│   └── 5_clean_mask.py
+├── data_validation
+│   ├── 1_fragmentation_data_val.py
+│   ├── 2_general_data_val.py
+│   └── 3_dataset_verification_F1.py
+├── F1_eval
+│   ├── 6.1_determine_usable_pairs_F1.py
+│   ├── expanding_window_evaluation_setup.py
+│   ├── joint_model_eval_F1.py
+│   └── separate_model_eval_F1.py
+├── F2_eval
+│   ├── 6.2_F2_dataset_construction.py
+│   ├── F2_expanding_window_evaluation_setup.py
+│   ├── joint_model_eval_F2.py
+│   └── separate_model_eval_F2.py
+├── F3_eval
+│   ├── 6.3.1_combine_final_pull_F3.py
+│   ├── 6.3.2_F3_dataset_construction.py
+│   ├── F3_expanding_window_evaluation_setup.py
+│   ├── joint_model_eval_F3.py
+│   └── separate_model_eval_F3.py
+├── baselines_eval
+│   ├── baseline0_eval.py
+│   ├── baseline1_eval.py
+│   ├── baseline2_eval.py
+│   └── baseline3_eval.py
+├── ablation_A_feature_scaling
+│   └── comparative_evaluation.py
+├── ablation_B_heterogeneity
+│   ├── heterogeneity_eval_F1.py
+│   ├── heterogeneity_eval_F2.py
+│   └── heterogeneity_eval_F3.py
+├── ablation_C_shrinkage
+│   ├── shrinkage_diagnostics_F1.py
+│   ├── shrinkage_diagnostics_F2.py
+│   └── shrinkage_diagnostics_F3.py
+└── results
+    ├── results_summary
+    │   ├── plots
+    │   └── tables
+    ├── heterogeneity_analysis_F1_L30
+    ├── heterogeneity_analysis_F2_L30
+    ├── heterogeneity_analysis_F3_L30
+    ├── shrinkage_diagnostics_F1_L30
+    ├── shrinkage_diagnostics_F2_L30
+    ├── shrinkage_diagnostics_F3_L30
+    └── robustness_summary
+</pre>
+</details>
+
 ## Execution Order
 
 Scripts are designed to be run sequentially in three phases.
@@ -102,70 +168,4 @@ Pre-computed results are included in the `results/` directory:
 - `heterogeneity_analysis_F*_L30/` — who benefits from joint estimation, bucketed by asset characteristics
 - `shrinkage_diagnostics_F*_L30/` — cross-asset dispersion and within-asset variance diagnostics
 - `robustness_summary/` — year-level inference and aggregated robustness metrics
-
-## Repository Structure
-
-<details>
-<summary>Click to expand</summary>
-<pre>
-.
-├── README.md
-├── requirements.txt
-├── corr_SPI_study.py
-├── robustness_checks.py
-├── data_preparation
-│   ├── 1.1_create_events.py
-│   ├── 1.2_create_current.py
-│   ├── 2_spi_historical_reconstruction.py
-│   ├── 3_SPI_RICs_to_pull.py
-│   ├── 4_combine_initial_pull.py
-│   └── 5_clean_mask.py
-├── data_validation
-│   ├── 1_fragmentation_data_val.py
-│   ├── 2_general_data_val.py
-│   └── 3_dataset_verification_F1.py
-├── F1_eval
-│   ├── 6.1_determine_usable_pairs_F1.py
-│   ├── expanding_window_evaluation_setup.py
-│   ├── joint_model_eval_F1.py
-│   └── separate_model_eval_F1.py
-├── F2_eval
-│   ├── 6.2_F2_dataset_construction.py
-│   ├── F2_expanding_window_evaluation_setup.py
-│   ├── joint_model_eval_F2.py
-│   └── separate_model_eval_F2.py
-├── F3_eval
-│   ├── 6.3.1_combine_final_pull_F3.py
-│   ├── 6.3.2_F3_dataset_construction.py
-│   ├── F3_expanding_window_evaluation_setup.py
-│   ├── joint_model_eval_F3.py
-│   └── separate_model_eval_F3.py
-├── baselines_eval
-│   ├── baseline0_eval.py
-│   ├── baseline1_eval.py
-│   ├── baseline2_eval.py
-│   └── baseline3_eval.py
-├── ablation_A_feature_scaling
-│   └── comparative_evaluation.py
-├── ablation_B_heterogeneity
-│   ├── heterogeneity_eval_F1.py
-│   ├── heterogeneity_eval_F2.py
-│   └── heterogeneity_eval_F3.py
-├── ablation_C_shrinkage
-│   ├── shrinkage_diagnostics_F1.py
-│   ├── shrinkage_diagnostics_F2.py
-│   └── shrinkage_diagnostics_F3.py
-└── results
-    ├── results_summary
-    │   ├── plots
-    │   └── tables
-    ├── heterogeneity_analysis_F1_L30
-    ├── heterogeneity_analysis_F2_L30
-    ├── heterogeneity_analysis_F3_L30
-    ├── shrinkage_diagnostics_F1_L30
-    ├── shrinkage_diagnostics_F2_L30
-    ├── shrinkage_diagnostics_F3_L30
-    └── robustness_summary
-</pre>
-</details>
 

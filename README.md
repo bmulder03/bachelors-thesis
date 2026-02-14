@@ -114,7 +114,7 @@ Scripts are designed to be run sequentially in three phases.
 
 **Phase 3 — Model training, evaluation & analysis** (independent across blocks):
 
-- Within each `F*_eval/` folder: expanding window setup → joint model → separate model
+- Within each `F*_eval/` folder: expanding window setup → separate model → joint model
 - `baselines_eval/baseline0_eval.py` through `baseline3_eval.py`
 - Ablations A, B, C (in any order, after Phase 3 models have been trained)
 - `robustness_checks.py`

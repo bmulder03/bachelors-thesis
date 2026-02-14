@@ -82,7 +82,7 @@ W_AMIHUD    = 20
 EPS = 1e-12
 
 # Per-feature clipping bounds (set to None to disable)
-CLIP_ABS_RET = 1.0
+CLIP_ABS_RET = None
 CLIP_TURNZ   = 10.0
 CLIP_RELSPRD = 1.0
 CLIP_VWAPDEV = 1.0
@@ -313,8 +313,8 @@ def main():
     # ============================================================
     # 3  Feature construction (all causal: data at day τ uses only ≤ τ)
     # ============================================================
-    # (0) ret — excess return, symmetrically clipped
-    ret = clip_symmetric(Y.copy(), CLIP_ABS_RET)
+    # (0) ret — excess return
+    ret = Y.copy()
 
     # (1) log_turn — log-transformed turnover
     log_turn = np.log1p(trn)

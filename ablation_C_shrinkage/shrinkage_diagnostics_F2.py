@@ -63,6 +63,9 @@ PLOT_DIR.mkdir(parents=True, exist_ok=True)
 MIN_TEST_OBS = 30   # minimum test observations per asset-year
 EPS = 1e-12
 
+# Threshold for "effectively zero" within-asset prediction std
+NEAR_ZERO_THRESHOLD = 1e-8
+
 # Plotting: multiply raw values by 10^PLOT_SCALE_POWER for readability,
 # then label axes with "× 10^{-PLOT_SCALE_POWER}".
 PLOT_SCALE_POWER = 4
@@ -242,12 +245,31 @@ def main():
 
         eligible = np.where(cnt >= MIN_TEST_OBS)[0]
 
+        # --- Per-asset OOS R² relative to zero predictor ---
+        # MSE of zero predictor = mean(y_true²) per asset
+        err2_zero = y_true ** 2
+        mse_zero = np.full(n_assets, np.nan, dtype=np.float64)
+        present = cnt > 0
+        mse_zero[present] = (
+            np.bincount(asset_id, weights=err2_zero, minlength=n_assets)[present]
+            / cnt[present]
+        )
+
+        r2_joint = np.full(n_assets, np.nan, dtype=np.float64)
+        r2_sep = np.full(n_assets, np.nan, dtype=np.float64)
+        nonzero_denom = mse_zero > EPS
+        r2_joint[nonzero_denom] = 1.0 - mse_j[nonzero_denom] / mse_zero[nonzero_denom]
+        r2_sep[nonzero_denom] = 1.0 - mse_s[nonzero_denom] / mse_zero[nonzero_denom]
+
         # Asset-year level rows
         for a in eligible:
             asset_year_rows.append({
                 "test_year": year, "asset_id": int(a), "n_obs": int(cnt[a]),
                 "mse_sep": float(mse_s[a]), "mse_joint": float(mse_j[a]),
+                "mse_zero": float(mse_zero[a]),
                 "delta_mse": float(mse_j[a] - mse_s[a]),
+                "r2_oos_joint": float(r2_joint[a]),
+                "r2_oos_sep": float(r2_sep[a]),
                 "mean_pred_sep": float(mp_s[a]), "mean_pred_joint": float(mp_j[a]),
                 "delta_mean_pred": float(mp_j[a] - mp_s[a]),
                 "std_pred_sep": float(sp_s[a]), "std_pred_joint": float(sp_j[a]),
@@ -259,6 +281,15 @@ def main():
         e_mp_s, e_mp_j = mp_s[eligible], mp_j[eligible]
         e_sp_s, e_sp_j = sp_s[eligible], sp_j[eligible]
         e_ms_s, e_ms_j = mse_s[eligible], mse_j[eligible]
+        e_r2_j, e_r2_s = r2_joint[eligible], r2_sep[eligible]
+
+        # Zero-std fractions for this year
+        frac_zero_std_joint_yr = float(
+            (e_sp_j < NEAR_ZERO_THRESHOLD).sum() / len(e_sp_j)
+        )
+        frac_zero_std_sep_yr = float(
+            (e_sp_s < NEAR_ZERO_THRESHOLD).sum() / len(e_sp_s)
+        )
 
         yr = {
             "test_year": year,
@@ -273,13 +304,17 @@ def main():
             "avg_within_std_pred_joint": float(np.nanmean(e_sp_j)),
             "delta_avg_within_std_pred": float(np.nanmean(e_sp_j - e_sp_s)),
             "corr_delta_stdpred_delta_mse": safe_corr(e_sp_j - e_sp_s, e_ms_j - e_ms_s),
+            "frac_zero_std_joint": frac_zero_std_joint_yr,
+            "frac_zero_std_sep": frac_zero_std_sep_yr,
         }
         year_rows.append(yr)
 
         print(f"[{year}] assets={len(eligible)} | "
               f"Δmean_mse={yr['delta_mean_mse']:.3e} | "
               f"Δcross_std={yr['delta_cross_asset_std_mean_pred']:.3e} | "
-              f"Δwithin_std={yr['delta_avg_within_std_pred']:.3e}")
+              f"Δwithin_std={yr['delta_avg_within_std_pred']:.3e} | "
+              f"zero_std_joint={frac_zero_std_joint_yr:.1%} | "
+              f"zero_std_sep={frac_zero_std_sep_yr:.1%}")
 
     asset_year_df = pd.DataFrame(asset_year_rows).sort_values(["test_year", "asset_id"])
     year_df = pd.DataFrame(year_rows).sort_values("test_year")
@@ -299,10 +334,70 @@ def main():
     print(f"Year-level corr(Δwithin_std, Δmean_mse) = {corr_within:.4f}\n")
 
     # ============================================================
-    # 3  Save tables
+    # 3  Non-collapsed asset-years: R² analysis
+    # ============================================================
+    nonzero_mask = asset_year_df["std_pred_joint"] >= NEAR_ZERO_THRESHOLD
+    collapsed_mask = asset_year_df["std_pred_joint"] < NEAR_ZERO_THRESHOLD
+
+    n_nonzero = nonzero_mask.sum()
+    n_collapsed = collapsed_mask.sum()
+
+    print("\n" + "=" * 90)
+    print("R² ANALYSIS: NON-COLLAPSED vs COLLAPSED ASSET-YEARS (joint model)")
+    print("=" * 90)
+
+    if n_nonzero > 0:
+        nonzero_df = asset_year_df[nonzero_mask]
+        r2_nz = nonzero_df["r2_oos_joint"]
+        frac_pos_r2_nz = float((r2_nz > 0).mean())
+        mean_r2_nz = float(r2_nz.mean())
+        median_r2_nz = float(r2_nz.median())
+
+        print(f"\nNon-collapsed asset-years (std_pred_joint >= {NEAR_ZERO_THRESHOLD}):")
+        print(f"  Count:              {n_nonzero}")
+        print(f"  Mean R²_oos:        {mean_r2_nz:.6f}")
+        print(f"  Median R²_oos:      {median_r2_nz:.6f}")
+        print(f"  Frac R²_oos > 0:    {frac_pos_r2_nz:.1%}")
+        print(f"\n  R²_oos distribution:")
+        print(f"  {r2_nz.describe().to_string()}")
+    else:
+        print("\n  No non-collapsed asset-years found.")
+
+    if n_collapsed > 0:
+        collapsed_df = asset_year_df[collapsed_mask]
+        r2_c = collapsed_df["r2_oos_joint"]
+        frac_pos_r2_c = float((r2_c > 0).mean())
+        mean_r2_c = float(r2_c.mean())
+        median_r2_c = float(r2_c.median())
+
+        print(f"\nCollapsed asset-years (std_pred_joint < {NEAR_ZERO_THRESHOLD}):")
+        print(f"  Count:              {n_collapsed}")
+        print(f"  Mean R²_oos:        {mean_r2_c:.6f}")
+        print(f"  Median R²_oos:      {median_r2_c:.6f}")
+        print(f"  Frac R²_oos > 0:    {frac_pos_r2_c:.1%}")
+
+    # Also show separate model R² for comparison
+    print(f"\nSeparate model (all asset-years):")
+    r2_sep_all = asset_year_df["r2_oos_sep"]
+    print(f"  Mean R²_oos:        {float(r2_sep_all.mean()):.6f}")
+    print(f"  Median R²_oos:      {float(r2_sep_all.median()):.6f}")
+    print(f"  Frac R²_oos > 0:    {float((r2_sep_all > 0).mean()):.1%}")
+
+    print("=" * 90)
+
+    # ============================================================
+    # 4  Save tables
     # ============================================================
     asset_year_df.to_csv(OUT_ASSET_YEAR_CSV, index=False)
     year_df.to_csv(OUT_YEAR_SUMMARY_CSV, index=False)
+
+    # Overall zero-std fractions
+    frac_zero_std_joint = float(
+        (asset_year_df["std_pred_joint"] < NEAR_ZERO_THRESHOLD).mean()
+    )
+    frac_zero_std_sep = float(
+        (asset_year_df["std_pred_sep"] < NEAR_ZERO_THRESHOLD).mean()
+    )
 
     overall = {
         "n_asset_year_rows": len(asset_year_df),
@@ -318,6 +413,12 @@ def main():
         ),
         "mean_mse_sep": float(asset_year_df["mse_sep"].mean()),
         "mean_std_pred_sep": float(asset_year_df["std_pred_sep"].mean()),
+        "frac_zero_std_joint": frac_zero_std_joint,
+        "frac_zero_std_sep": frac_zero_std_sep,
+        "n_noncollapsed": int(n_nonzero),
+        "n_collapsed": int(n_collapsed),
+        "frac_pos_r2_noncollapsed": float((asset_year_df.loc[nonzero_mask, "r2_oos_joint"] > 0).mean()) if n_nonzero > 0 else np.nan,
+        "mean_r2_noncollapsed": float(asset_year_df.loc[nonzero_mask, "r2_oos_joint"].mean()) if n_nonzero > 0 else np.nan,
     }
     overall_df = pd.DataFrame([overall])
     overall_df.to_csv(OUT_OVERALL_CSV, index=False)
@@ -327,9 +428,19 @@ def main():
     print("=" * 90)
     print(overall_df.to_string(index=False))
     print("=" * 90)
+    print(f"\nZero-std fraction (joint):    {frac_zero_std_joint:.1%}")
+    print(f"Zero-std fraction (separate): {frac_zero_std_sep:.1%}")
 
     # ============================================================
-    # 4  Plots
+    # 5  Descriptive stats for threshold calibration
+    # ============================================================
+    print("\n--- std_pred_joint distribution ---")
+    print(asset_year_df["std_pred_joint"].describe())
+    print("\n--- std_pred_sep distribution ---")
+    print(asset_year_df["std_pred_sep"].describe())
+
+    # ============================================================
+    # 6  Plots
     # ============================================================
     CLR_SEP = "#1f77b4"
     CLR_JOINT = "#d6604d"
@@ -394,7 +505,7 @@ def main():
     savefig(PLOT_DIR / "hist_delta_std_pred.png")
 
     # ============================================================
-    # 5  Summary
+    # 7  Summary
     # ============================================================
     print("\nSaved:")
     print(f"  - {OUT_ASSET_YEAR_CSV}")

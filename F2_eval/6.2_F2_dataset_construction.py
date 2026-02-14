@@ -100,9 +100,16 @@ def compute_f2_features(Y: pd.DataFrame, P: pd.DataFrame) -> dict:
     for w in W_MOM:
         feats[f"mom_{w}"] = np.expm1(log1p.rolling(w, min_periods=w).sum())
 
-    # (10) drawdown relative to rolling peak price
-    roll_max = P.rolling(W_DD, min_periods=W_DD).max()
-    feats[f"drawdown_{W_DD}"] = (P / roll_max) - 1.0
+    # (10) drawdown from cumulated returns within the W_DD-day window (starting at 1)
+    # Use cumulative log-returns S_t = sum_{τ≤t} log(1+r_τ).
+    # Within-window drawdown at t is:
+    #   exp(S_t - max_{u in window} S_u) - 1
+    # This is strictly return-information only (no price level information).
+    log1p = np.log1p(Y)
+    S = log1p.cumsum()
+    S_peak = S.rolling(W_DD, min_periods=W_DD).max()
+    feats[f"drawdown_{W_DD}"] = np.expm1(S - S_peak)
+
 
     return feats
 

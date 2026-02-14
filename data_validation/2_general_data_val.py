@@ -1,5 +1,5 @@
 """
-Thesis Data Pipeline – Step 6 (Validation)
+Thesis Data Pipeline - Step 6 (Validation)
 ===========================================
 Integrity and sanity checks for the frozen SPI daily dataset produced
 by the preprocessing pipeline.

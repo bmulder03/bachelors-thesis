@@ -290,3 +290,40 @@ pd.Series(stats).to_csv("F1_summary_statistics.csv")
 
 print("\nSaved: F1_summary_statistics.csv")
 print("=" * 60)
+
+
+
+# ============================================================
+# 9  Tail diagnostics (heavy-tail validation)
+# ============================================================
+
+print("\n" + "=" * 60)
+print("TAIL DIAGNOSTICS")
+print("=" * 60)
+
+# Basic extrema
+print(f"Min return: {y.min():.6f}")
+print(f"Max return: {y.max():.6f}")
+
+# High percentiles
+for p in [99, 99.5, 99.9, 99.99]:
+    print(f"{p}th percentile: {np.percentile(y, p):.6f}")
+
+for p in [1, 0.5, 0.1, 0.01]:
+    print(f"{p}th percentile: {np.percentile(y, p):.6f}")
+
+# Count extreme observations
+print("\nExtreme return counts:")
+print(f"|y| > 0.3  : {np.sum(np.abs(y) > 0.3)}")
+print(f"|y| > 0.5  : {np.sum(np.abs(y) > 0.5)}")
+print(f"|y| > 1.0  : {np.sum(np.abs(y) > 1.0)}")
+print(f"|y| > 2.0  : {np.sum(np.abs(y) > 2.0)}")
+
+# Winsorized kurtosis check (0.5% tails)
+lower = np.percentile(y, 0.5)
+upper = np.percentile(y, 99.5)
+y_w = np.clip(y, lower, upper)
+
+print("\nWinsorized (0.5%) kurtosis:")
+print(f"Excess kurtosis (raw):        {y_series.kurtosis():.2f}")
+print(f"Excess kurtosis (winsorized): {pd.Series(y_w).kurtosis():.2f}")

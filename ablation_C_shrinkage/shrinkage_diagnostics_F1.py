@@ -64,8 +64,8 @@ PLOT_DIR.mkdir(parents=True, exist_ok=True)
 MIN_TEST_OBS = 30   # minimum test observations per asset-year
 EPS = 1e-12
 
-# Threshold for "effectively zero" within-asset prediction std
-NEAR_ZERO_THRESHOLD = 1e-12
+# Threshold for "numerically zero" within-asset prediction std
+NEAR_ZERO_THRESHOLD = 1e-15
 
 # Plotting: multiply raw values by 10^PLOT_SCALE_POWER for readability,
 # then label axes with "× 10^{-PLOT_SCALE_POWER}".
